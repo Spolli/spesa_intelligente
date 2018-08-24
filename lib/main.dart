@@ -29,31 +29,19 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   DBHelper _db;
-  List<int> _del = new List<int>();
+  static List<int> _del = new List<int>();
+  static List<Spesa> _list;
+  bool _vis = false;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _getData();
+  }
 
   @override
   Widget build(BuildContext context) {
-    var futureBuilder = new FutureBuilder(
-      future: _getData(),
-      builder: (BuildContext context, AsyncSnapshot snapshot) {
-        switch (snapshot.connectionState) {
-          case ConnectionState.none:
-          case ConnectionState.waiting:
-            return new Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: new Center(
-                child: new CircularProgressIndicator(),
-              ),
-            );
-          default:
-            if (snapshot.hasError)
-              return new Text('Error: ${snapshot.error}');
-            else
-              return createListView(context, snapshot);
-        }
-      },
-    );
-
     return new Scaffold(
       appBar: new AppBar(
         title: new Text("Spesa Intelligente"),
@@ -73,7 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
           IconButton(
               icon: Icon(Icons.refresh),
               onPressed: () {
-                //_refreshRecord();
+                _refreshRecord();
               }
           ),
           IconButton(
@@ -84,7 +72,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-      body: futureBuilder,
+      body: createListView(context),
       floatingActionButton: new FloatingActionButton(
         onPressed: (){
           Navigator.push(
@@ -98,19 +86,22 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Future<List<Spesa>> _getData() async {
+  Future<Null> _getData() async {
     this._db = new DBHelper();
     var values = new List<Spesa>();
     values = await _db.getAll();
+    setState(() {
+      _list = values;
+    });
     //await new Future.delayed(new Duration(seconds: 1));
-    return values;
   }
 
   void _deleteRecord() async{
     this._db = new DBHelper();
-    for(int i in this._del){
-      this._db.delete(i);
+    for(int i in _del){
+      await this._db.delete(i);
     }
+    await _getData();
     /*Scaffold.of(context).showSnackBar(new SnackBar(
         content: new Text("Record eliminati con successo")
     ));*/
@@ -118,7 +109,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _spesaTotRecord() async{
     this._db = new DBHelper();
-    this._db.spesaTot().then((value){
+    await this._db.spesaTot().then((value){
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -131,54 +122,79 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Widget createListView(BuildContext context, AsyncSnapshot snapshot) {
-    List<Spesa> values = snapshot.data;
-    List<bool> _checkList = new List<bool>(values.length);
-
-    //bool _vis = false;
-    for(int i = 0; i < _checkList.length; i++){
-      _checkList[i] = false;
+  void _refreshRecord() async{
+    this._db = new DBHelper();
+    List<Spesa> values = await _db.getAll();
+    String text = "";
+    for(Spesa s in values){
+      text += s.id.toString() + " / " + s.dt_spesa + " / " + s.costo.toString() + " / " + s.descrizione + "\n";
     }
-
-    return new ListView.builder(
-      itemCount: values.length,
-      itemBuilder: (BuildContext context, int index) {
-        return new Column(
-          children: <Widget>[
-            new ListTile(
-              leading: new Checkbox(
-                  value: _checkList[index],
-                  onChanged: (bool value){
-                    setState(() {
-                      _checkList[index] = value;
-                    });
-                    if(value){
-                      _del.add(values[index].id);
-                      //_vis = true;
-                    } else{
-                      _del.remove(values[index].id);
-                      if(_del.length == 0) {
-                        //_vis = false;
-                      }
-                    }
-                  }),
-              title: new Text(values[index].dt_spesa),
-              trailing: new Text(values[index].costo.toString() + "\€"),
-              subtitle: new Text(values[index].descrizione),
-              onLongPress: (){
-                _del.add(values[index].id);
-                //_vis = true;
-                setState(() {
-                  _checkList[index] = true;
-                });
-              },
-              selected: _checkList[index],
-            ),
-            new Divider(height: 2.0,),
-          ],
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: new Text("TODO"),
+          content: new Text(text),
         );
       },
     );
+  }
+
+  Widget createListView(BuildContext context) {
+
+    try{
+      List<bool> _checkList = new List<bool>(_list.length);
+
+
+      for(int i = 0; i < _checkList.length; i++){
+        _checkList[i] = false;
+      }
+
+      return new ListView.builder(
+        itemCount: _list.length,
+        itemBuilder: (BuildContext context, int index) {
+          return new Column(
+            children: <Widget>[
+              new ListTile(
+                leading: new Checkbox(
+                    value: _checkList[index],
+                    onChanged: (bool value){
+                      setState(() {
+                        if(value){
+                          _del.add(_list[index].id);
+                          _vis = value;
+                        } else{
+                          _del.remove(_list[index].id);
+                          if(_del.length == 0) {
+                            _vis = value;
+                          }
+                        }
+
+                        _checkList[index] = !_checkList[index];
+                        print("CheckBox $index Value = " + _checkList[index].toString());
+                      });
+
+                    }),
+                title: new Text(_list[index].dt_spesa),
+                trailing: new Text(_list[index].costo.toString() + "\€"),
+                subtitle: new Text(_list[index].descrizione),
+                onLongPress: (){
+                  setState(() {
+                    _checkList[index] = !_checkList[index];
+                    _del.add(_list[index].id);
+                    _vis = true;
+                  });
+                },
+                selected: _checkList[index],
+              ),
+              new Divider(height: 2.0,),
+            ],
+          );
+        },
+      );
+    } catch(e){
+     print(e.toString());
+    }
   }
 }
 
@@ -296,7 +312,12 @@ class _FormInputState extends State<_FormInput> {
                             _formKey.currentState.save();
                             DBHelper _db = new DBHelper();
                             _db.insert(_data);
-                            Navigator.pop(context);
+
+                           // Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) =>  new MyHomePage()),
+                            );
                           }
                         },
                       )),

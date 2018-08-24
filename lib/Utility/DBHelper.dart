@@ -63,7 +63,7 @@ class DBHelper {
     var dbClient = await db;
     //List<Map> list = await dbClient.execute("SELECT * FROM $tableSpese ORDER BY $columnDtSpesa DESC");
     List<Map> list = await dbClient.rawQuery(
-        'SELECT * FROM $tableSpese ORDER BY $columnDtSpesa desc');
+        'SELECT * FROM $tableSpese ORDER BY $columnDtSpesa DESC');
     List<Spesa> employees = new List();
     for (int i = 0; i < list.length; i++) {
       var spesa = new Spesa(
