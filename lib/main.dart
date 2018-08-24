@@ -3,6 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:spesa_intelligente/Model/Spese.dart';
 import 'package:spesa_intelligente/Utility/DBHelper.dart';
+import 'package:spesa_intelligente/Pages/input_form.dart';
+
+import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
+import 'package:intl/intl.dart';
 
 void main() => runApp(new MyApp());
 
@@ -242,6 +246,8 @@ class _FormInputState extends State<_FormInput> {
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.of(context).size;
     final GlobalKey<FormState> _formKey = new GlobalKey<FormState>();
+    final dateFormat = DateFormat("dd/MM/yyyy");
+    DateTime nDate = new DateTime.now();
 
     return new Scaffold(
       appBar: new AppBar(
@@ -254,22 +260,25 @@ class _FormInputState extends State<_FormInput> {
               child: new ListView(
                 padding: new EdgeInsets.symmetric(horizontal: 16.0),
                 children: <Widget>[
-                  new TextFormField(
+                  new DateTimePickerFormField(
                     key: dt,
                     decoration: new InputDecoration(
                       icon: new IconButton(
                         icon: new Icon(Icons.calendar_today),
                         onPressed: (){
-                          selectDate(context);
                         },
                       ),
                       hintText: 'Enter Date',
                       labelText: 'Date',
                     ),
+                    format: dateFormat,
                     keyboardType: TextInputType.datetime,
-                    initialValue: _date.toIso8601String().substring(0, 10),
-                    onSaved: (String value) {
-                      this._data.dt_spesa = value;
+                    initialValue: nDate,
+                    onChanged: (date) {
+                      nDate = date;
+                    },
+                    onSaved: (DateTime value) {
+                      this._data.dt_spesa = value.toIso8601String().substring(0, 10);
                     },
                   ),
                   new TextFormField(
@@ -311,8 +320,7 @@ class _FormInputState extends State<_FormInput> {
                             _formKey.currentState.save();
                             DBHelper _db = new DBHelper();
                             _db.insert(_data);
-
-                           // Navigator.pop(context);
+                            // Navigator.pop(context);
                             Navigator.push(
                               context,
                               MaterialPageRoute(builder: (context) =>  new MyHomePage()),

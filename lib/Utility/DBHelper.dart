@@ -104,6 +104,7 @@ class DBHelper {
     var dbClient = await db;
     Future<List<Map<String, dynamic>>> sum = dbClient.rawQuery("SELECT SUM($columnCosto) as sum FROM $tableSpese");
     sum.then((value){
+      print(value.toString());
       return value[0]['sum'];
     }).catchError((error){
       print(error.toString());
