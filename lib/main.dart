@@ -35,7 +35,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _getData();
   }
@@ -127,13 +126,13 @@ class _MyHomePageState extends State<MyHomePage> {
     List<Spesa> values = await _db.getAll();
     String text = "";
     for(Spesa s in values){
-      text += s.id.toString() + " / " + s.dt_spesa + " / " + s.costo.toString() + " / " + s.descrizione + "\n";
+      text += s.id.toString() + "\t|\t" + s.dt_spesa + "\t|\t" + s.costo.toString() + "\t|\t" + s.descrizione + "\n";
     }
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: new Text("TODO"),
+          title: new Text("All Records"),
           content: new Text(text),
         );
       },
@@ -170,8 +169,8 @@ class _MyHomePageState extends State<MyHomePage> {
                           }
                         }
 
-                        _checkList[index] = !_checkList[index];
-                        print("CheckBox $index Value = " + _checkList[index].toString());
+                        _checkList[index] = value;
+                        print("CheckBox $index Value = " + value.toString());
                       });
 
                     }),
@@ -193,7 +192,7 @@ class _MyHomePageState extends State<MyHomePage> {
         },
       );
     } catch(e){
-     print(e.toString());
+     return new Center(child: new CircularProgressIndicator());
     }
   }
 }
