@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:spesa_intelligente/Model/Spese.dart';
 import 'package:spesa_intelligente/Utility/DBHelper.dart';
-import 'package:spesa_intelligente/Pages/input_form.dart';
 
 import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
 import 'package:intl/intl.dart';
@@ -36,6 +35,7 @@ class _MyHomePageState extends State<MyHomePage> {
   static List<int> _del = new List<int>();
   static List<Spesa> _list;
   bool _vis = false;
+  static List<bool> _checkList;
 
   @override
   void initState() {
@@ -83,7 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
             MaterialPageRoute(builder: (context) =>  new _FormInput()),
           );
         },
-        tooltip: 'Increment',
+        tooltip: 'Add',
         child: new Icon(Icons.add),
       ),
     );
@@ -95,6 +95,10 @@ class _MyHomePageState extends State<MyHomePage> {
     values = await _db.getAll();
     setState(() {
       _list = values;
+      _checkList = new List<bool>(_list.length);
+      for(int i = 0; i < _checkList.length; i++){
+        _checkList[i] = false;
+      }
     });
     //await new Future.delayed(new Duration(seconds: 1));
   }
@@ -122,6 +126,16 @@ class _MyHomePageState extends State<MyHomePage> {
           );
         },
       );
+    }).catchError((error){
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: new Text("ERROR"),
+            content: new Text("Error\n" + error.toString()),
+          );
+        },
+      );
     });
   }
 
@@ -144,15 +158,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget createListView(BuildContext context) {
-
     try{
-      List<bool> _checkList = new List<bool>(_list.length);
-
-
-      for(int i = 0; i < _checkList.length; i++){
-        _checkList[i] = false;
-      }
-
       return new ListView.builder(
         itemCount: _list.length,
         itemBuilder: (BuildContext context, int index) {
@@ -165,27 +171,33 @@ class _MyHomePageState extends State<MyHomePage> {
                       setState(() {
                         if(value){
                           _del.add(_list[index].id);
-                          _vis = value;
+                          _vis = true;
                         } else{
                           _del.remove(_list[index].id);
                           if(_del.length == 0) {
-                            _vis = value;
+                            _vis = false;
                           }
                         }
-
                         _checkList[index] = value;
-                        print("CheckBox $index Value = " + value.toString());
                       });
 
                     }),
                 title: new Text(_list[index].dt_spesa),
-                trailing: new Text(_list[index].costo.toString() + "\€"),
+                trailing: new Text(_list[index].costo.toString() + " \€"),
                 subtitle: new Text(_list[index].descrizione),
                 onLongPress: (){
                   setState(() {
-                    _checkList[index] = !_checkList[index];
-                    _del.add(_list[index].id);
-                    _vis = true;
+                    if(_checkList[index]){
+                      _checkList[index] = !_checkList[index];
+                      _del.add(_list[index].id);
+                      _vis = true;
+                    } else{
+                      _checkList[index] = !_checkList[index];
+                      _del.remove(_list[index].id);
+                      if(_del.length == 0) {
+                        _vis = false;
+                      }
+                    }
                   });
                 },
                 selected: _checkList[index],
